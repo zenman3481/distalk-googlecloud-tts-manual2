@@ -37,9 +37,9 @@ credentials['token_uri'] = google_token_uri
 credentials['auth_provider_x509_cert_uri'] = google_auth_provider_x509_cert_url
 credentials['client_x509_cert_url'] = google_client_x509_cert_url
 
-with open('/tmp/credentials.json', 'w') as file:
+with open('/tmp/credentials2.json', 'w') as file:
     json.dump(credentials, file, indent=2, ensure_ascii=False)
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/tmp/credentials.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/tmp/credentials2.json'
 tts_client = texttospeech.TextToSpeechClient()
 
 @client.event
@@ -132,7 +132,7 @@ async def on_message(message):
             while message.guild.voice_client.is_playing():
                 await asyncio.sleep(0.5)
             tts(text)
-            source = discord.FFmpegPCMAudio('/tmp/message.mp3')
+            source = discord.FFmpegPCMAudio('/tmp/message2.mp3')
             message.guild.voice_client.play(source)
         else:
             pass
@@ -154,7 +154,7 @@ async def on_voice_state_update(member, before, after):
                     while member.guild.voice_client.is_playing():
                         await asyncio.sleep(0.5)
                     tts(text)
-                    source = discord.FFmpegPCMAudio('/tmp/message.mp3')
+                    source = discord.FFmpegPCMAudio('/tmp/message2.mp3')
                     member.guild.voice_client.play(source)
     elif after.channel is None:
         if member.id == client.user.id:
@@ -171,7 +171,7 @@ async def on_voice_state_update(member, before, after):
                         while member.guild.voice_client.is_playing():
                             await asyncio.sleep(0.5)
                         tts(text)
-                        source = discord.FFmpegPCMAudio('/tmp/message.mp3')
+                        source = discord.FFmpegPCMAudio('/tmp/message2.mp3')
                         member.guild.voice_client.play(source)
     elif before.channel != after.channel:
         if member.guild.voice_client:
