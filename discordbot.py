@@ -58,6 +58,10 @@ async def on_guild_remove(guild):
     await client.change_presence(activity=discord.Game(name=presence))
 
 @client.command()
+async def join1(ctx):
+    pass
+
+@client.command()
 async def join2(ctx):
     if ctx.message.guild:
         if ctx.author.voice is None:
@@ -72,6 +76,10 @@ async def join2(ctx):
                     await ctx.author.voice.channel.connect()
             else:
                 await ctx.author.voice.channel.connect()
+
+@client.command()
+async def bye1(ctx):
+    pass
 
 @client.command()
 async def bye2(ctx):
