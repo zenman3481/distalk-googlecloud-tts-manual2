@@ -8,6 +8,10 @@ import emoji
 import json
 from google.cloud import texttospeech
 
+voice_num = 2
+credential_file = '/tmp/credentials' + voice_num + '.json'
+message_file = '/tmp/message' + voice_num + '.mp3'
+
 prefix = os.getenv('DISCORD_BOT_PREFIX', default='🦑')
 tts_lang = os.getenv('DISCORD_BOT_LANG', default='ja-JP')
 tts_voice = os.getenv('DISCORD_BOT_VOICE', default='ja-JP-Wavenet-B')
@@ -37,9 +41,9 @@ credentials['token_uri'] = google_token_uri
 credentials['auth_provider_x509_cert_uri'] = google_auth_provider_x509_cert_url
 credentials['client_x509_cert_url'] = google_client_x509_cert_url
 
-with open('/tmp/credentials2.json', 'w') as file:
+with open(credential_file, 'w') as file:
     json.dump(credentials, file, indent=2, ensure_ascii=False)
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/tmp/credentials2.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_file
 tts_client = texttospeech.TextToSpeechClient()
 
 @client.event
@@ -59,35 +63,19 @@ async def on_guild_remove(guild):
 
 @client.command()
 async def join1(ctx):
-    pass
+    join(ctx, voice_num, 1)
 
 @client.command()
 async def join2(ctx):
-    if ctx.message.guild:
-        if ctx.author.voice is None:
-            await ctx.send('ボイスチャンネルに接続してから呼び出してください。')
-        else:
-            if ctx.guild.voice_client:
-                if ctx.author.voice.channel == ctx.guild.voice_client.channel:
-                    await ctx.send('接続済みです。')
-                else:
-                    await ctx.voice_client.disconnect()
-                    await asyncio.sleep(0.5)
-                    await ctx.author.voice.channel.connect()
-            else:
-                await ctx.author.voice.channel.connect()
+    join(ctx, voice_num, 2)
 
 @client.command()
 async def bye1(ctx):
-    pass
+    bye(ctx, voice_num, 1)
 
 @client.command()
 async def bye2(ctx):
-    if ctx.message.guild:
-        if ctx.voice_client is None:
-            await ctx.send('ボイスチャンネルに接続していません。')
-        else:
-            await ctx.voice_client.disconnect()
+    bye(ctx, voice_num, 2)
 
 @client.event
 async def on_message(message):
@@ -140,7 +128,7 @@ async def on_message(message):
             while message.guild.voice_client.is_playing():
                 await asyncio.sleep(0.5)
             tts(text)
-            source = discord.FFmpegPCMAudio('/tmp/message2.mp3')
+            source = discord.FFmpegPCMAudio(message_file)
             message.guild.voice_client.play(source)
         else:
             pass
@@ -154,15 +142,13 @@ async def on_voice_state_update(member, before, after):
             await client.change_presence(activity=discord.Game(name=presence))
         else:
             if member.guild.voice_client is None:
-                await asyncio.sleep(0.5)
-                await after.channel.connect()
             else:
                 if member.guild.voice_client.channel is after.channel:
                     text = member.name + 'さんが入室しました'
                     while member.guild.voice_client.is_playing():
                         await asyncio.sleep(0.5)
                     tts(text)
-                    source = discord.FFmpegPCMAudio('/tmp/message2.mp3')
+                    source = discord.FFmpegPCMAudio(message_file)
                     member.guild.voice_client.play(source)
     elif after.channel is None:
         if member.id == client.user.id:
@@ -179,7 +165,7 @@ async def on_voice_state_update(member, before, after):
                         while member.guild.voice_client.is_playing():
                             await asyncio.sleep(0.5)
                         tts(text)
-                        source = discord.FFmpegPCMAudio('/tmp/message2.mp3')
+                        source = discord.FFmpegPCMAudio(message_file)
                         member.guild.voice_client.play(source)
     elif before.channel != after.channel:
         if member.guild.voice_client:
@@ -187,8 +173,6 @@ async def on_voice_state_update(member, before, after):
                 if len(member.guild.voice_client.channel.members) == 1 or member.voice.self_mute:
                     await asyncio.sleep(0.5)
                     await member.guild.voice_client.disconnect()
-                    await asyncio.sleep(0.5)
-                    await after.channel.connect()
 
 @client.event
 async def on_command_error(ctx, error):
@@ -215,8 +199,34 @@ def tts(message):
     response = tts_client.synthesize_speech(
         input=synthesis_input, voice=voice, audio_config=audio_config
     )
-    with open('/tmp/message2.mp3', 'wb') as out:
+    with open(message_file, 'wb') as out:
         out.write(response.audio_content)
+
+def join(ctx, voice_num, now):
+    if voice_num == now:
+        if ctx.message.guild:
+            if ctx.author.voice is None:
+                await ctx.send('ボイスチャンネルに接続してから呼び出してください。')
+            else:
+                if ctx.guild.voice_client:
+                    if ctx.author.voice.channel == ctx.guild.voice_client.channel:
+                        await ctx.send('接続済みです。')
+                    else:
+                        await ctx.voice_client.disconnect()
+                        await asyncio.sleep(0.5)
+                        await ctx.author.voice.channel.connect()
+                else:
+                    await ctx.author.voice.channel.connect()
+
+def bye(ctx, voice_num, now):    
+    if voice_num == now:
+        if ctx.message.guild:
+            if ctx.voice_client is None:
+                await ctx.send('ボイスチャンネルに接続していません。')
+            else:
+                await ctx.voice_client.disconnect()
+
+
 
 
 client.run(token)
